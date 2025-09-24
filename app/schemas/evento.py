@@ -1,6 +1,6 @@
 from pydantic import BaseModel
-from typing import Optional
 from datetime import date, time
+from typing import Optional
 
 class EventoBase(BaseModel):
     titulo: str
@@ -9,13 +9,12 @@ class EventoBase(BaseModel):
     hora: Optional[time] = None
 
 class EventoCreate(EventoBase):
-    alumno_id: Optional[int] = None
-    usuario_id: Optional[int] = None
+    alumno_id: Optional[int] = None  # si querés vincularlo a un alumno
 
 class EventoResponse(EventoBase):
     id: int
-    alumno_id: Optional[int]
     usuario_id: Optional[int]
+    alumno_id: Optional[int]
 
     class Config:
         orm_mode = True

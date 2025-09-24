@@ -26,9 +26,12 @@ def upload_documento(
     if not alumno:
         raise HTTPException(status_code=404, detail="Alumno no encontrado")
 
-    # Guardar archivo en carpeta
+    # Crear carpeta si no existe
+    os.makedirs("archivos/documentos", exist_ok=True)
+
+    # Guardar archivo en carpeta documentos
     nombre_archivo = f"{alumno_id}_{archivo.filename}"
-    ruta_destino = os.path.join("archivos", nombre_archivo)
+    ruta_destino = os.path.join("archivos/documentos", nombre_archivo)
     with open(ruta_destino, "wb") as buffer:
         shutil.copyfileobj(archivo.file, buffer)
 

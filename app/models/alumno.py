@@ -17,5 +17,4 @@ class Alumno(Base):
     # relaciones inversas
     pagos = relationship("Pago", back_populates="alumno", cascade="all, delete-orphan")
     documentos = relationship("Documento", back_populates="alumno", cascade="all, delete-orphan")
-    eventos = relationship("Evento", back_populates="alumno")
-    
+    eventos = relationship("Evento", back_populates="alumno", passive_deletes=True)

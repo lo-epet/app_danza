@@ -1,20 +1,25 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import date
-from decimal import Decimal
 
-class PagoBase(BaseModel):
-    monto: Decimal
-    fecha_pago: date
-    estado: Optional[str] = "pendiente"
-    comprobante_url: Optional[str] = None
-
-class PagoCreate(PagoBase):
+# 📥 Para crear un pago desde JSON (no desde archivo)
+class PagoCreate(BaseModel):
     alumno_id: int
+    descripcion: str
+    comprobante_url: str  # ✅ corregido
+    monto: Optional[float] = None
+    fecha_pago: Optional[date] = None
+    estado: Optional[str] = "pendiente"
 
-class PagoResponse(PagoBase):
+# 📤 Para devolver pagos al frontend
+class PagoResponse(BaseModel):
     id: int
     alumno_id: int
+    descripcion: str
+    comprobante_url: str  # ✅ corregido
+    monto: Optional[float] = None
+    fecha_pago: Optional[date] = None
+    estado: Optional[str] = None
 
     class Config:
         orm_mode = True

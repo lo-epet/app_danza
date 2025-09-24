@@ -2,6 +2,7 @@
 @register = {{url_base}}/auth/register
 @login = {{url_base}}/auth/login
 @alumno = {{url_base}}/alumnos
+@usuario = {{url_base}}/usuarios
 
 
 ###
@@ -18,14 +19,16 @@ Content-Type: application/json
     "ciudad": "Buenos Aires",
     "edad": 18
 }
+
 ###
 POST {{login}}
 Content-Type: application/json
 
 {
-    "email": "ejemplo@danza.com",
-    "password": "danza123"
+    "username": "juana@example.com",
+    "password": "pepejuana"
 }
+
 
 
 
@@ -34,10 +37,21 @@ POST {{register}}
 Content-Type: application/json
 
 {
-    "email": "ejemplo@danza.com",
-    "nombre": "Lola Castro",
-    "password": "danza123"
+    "email": "juana@example.com",
+    "nombre": "pepe",
+    "password": "pepejuana"
 }
 
+###
+POST http://localhost:8000/eventos/crear
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwZW9sYUBleGFtcGxlLmNvbSIsImV4cCI6MTc1ODY2ODEyMn0.LW7_lVN8ttCJI3vQHqPNOxOOZUYAg0STLz7K5IcV4d4
+Content-Type: application/json
+
+{
+    "titulo": "Clase de danza",
+    "descripcion": "Clase especial de tango",
+    "fecha": "2025-09-23",
+    "hora": "19:15:00"
+}
 
 

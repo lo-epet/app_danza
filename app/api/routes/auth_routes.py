@@ -1,14 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
-from pydantic import BaseModel
 from app.database.database import SessionLocal
 from app.models.usuarios import Usuario
 from app.schemas.usuario import UsuarioCreate, UsuarioResponse
-from app.security.auth import verify_password, get_password_hash, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
+from app.security.auth import (
+    verify_password,
+    get_password_hash,
+    create_access_token,
+    ACCESS_TOKEN_EXPIRE_MINUTES
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+# 🔌 Conexión a la base
 def get_db():
     db = SessionLocal()
     try:
@@ -24,7 +30,11 @@ def register(usuario: UsuarioCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Usuario ya registrado")
 
     hashed_password = get_password_hash(usuario.password)
-    nuevo_usuario = Usuario(email=usuario.email, nombre=usuario.nombre, password=hashed_password)
+    nuevo_usuario = Usuario(
+        email=usuario.email,
+        nombre=usuario.nombre,
+        password=hashed_password
+    )
 
     db.add(nuevo_usuario)
     db.commit()
@@ -32,22 +42,17 @@ def register(usuario: UsuarioCreate, db: Session = Depends(get_db)):
 
     return nuevo_usuario
 
-# 📥 Esquema para login
-class LoginRequest(BaseModel):
-    email: str
-    password: str
-
-# 🔐 Login con JSON
+# 🔐 Login compatible con Swagger (form-data)
 @router.post("/login")
-def login(data: LoginRequest, db: Session = Depends(get_db)):
-    email = data.email
-    password = data.password
-
-    user = db.query(Usuario).filter(Usuario.email == email).first()
-    if not user or not verify_password(password, user.password):
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(Usuario).filter(Usuario.email == form_data.username).first()
+    if not user or not verify_password(form_data.password, user.password):
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data={"sub": user.email}, expires_delta=access_token_expires)
+    access_token = create_access_token(
+        data={"sub": user.email},
+        expires_delta=access_token_expires
+    )
 
     return {"access_token": access_token, "token_type": "bearer"}
