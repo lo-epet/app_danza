@@ -3,8 +3,11 @@ from sqlalchemy.orm import Session
 from app.database.database import SessionLocal
 from app.models.documentos import Documento
 from app.models.alumno import Alumno
+from app.models.usuarios import Usuario
 import shutil
 import os
+
+from app.security.auth import get_current_user  # ✅ ya devuelve Usuario
 
 router = APIRouter(prefix="/documentos", tags=["documentos"])
 
@@ -26,16 +29,13 @@ def upload_documento(
     if not alumno:
         raise HTTPException(status_code=404, detail="Alumno no encontrado")
 
-    # Crear carpeta si no existe
     os.makedirs("archivos/documentos", exist_ok=True)
 
-    # Guardar archivo en carpeta documentos
     nombre_archivo = f"{alumno_id}_{archivo.filename}"
     ruta_destino = os.path.join("archivos/documentos", nombre_archivo)
     with open(ruta_destino, "wb") as buffer:
         shutil.copyfileobj(archivo.file, buffer)
 
-    # Crear registro en la base
     nuevo_doc = Documento(
         tipo=tipo,
         url_archivo=ruta_destino,
@@ -51,3 +51,27 @@ def upload_documento(
         "nombre": archivo.filename,
         "tipo": tipo
     }
+
+@router.get("/alumno/{alumno_id}")
+def listar_documentos_por_alumno(alumno_id: int, db: Session = Depends(get_db)):
+    documentos = db.query(Documento).filter(Documento.alumno_id == alumno_id).all()
+
+    return [
+        {
+            "id": doc.id,
+            "nombre": os.path.basename(doc.url_archivo),
+            "tipo": doc.tipo,
+            "url": f"http://128.3.254.138:8000/{doc.url_archivo}"
+        }
+        for doc in documentos
+    ]
+
+@router.delete("/{id}")
+def eliminar_documento(id: int, db: Session = Depends(get_db)):
+    doc = db.query(Documento).filter(Documento.id == id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    db.delete(doc)
+    db.commit()
+    return {"detail": "Documento eliminado correctamente"}
+

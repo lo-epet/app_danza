@@ -12,9 +12,10 @@ from app.models.pagos import Pago
 from app.models.alumno import Alumno
 from app.api.controllers import pagos_controller
 from app.security.auth import decode_access_token
+from app.security.auth import get_current_user, create_access_token, verify_password, get_password_hash
+
 
 router = APIRouter(prefix="/pagos", tags=["pagos"])
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 def get_db():
@@ -41,7 +42,7 @@ def listar_pagos(db: Session = Depends(get_db)):
 
 @router.post("/", response_model=PagoResponse)
 def crear_pago(pago: PagoCreate, db: Session = Depends(get_db)):
-    nuevo_pago = Pago(**pago.dict())  # usa comprobante_url del esquema
+    nuevo_pago = Pago(**pago.dict())
     db.add(nuevo_pago)
     db.commit()
     db.refresh(nuevo_pago)
@@ -49,8 +50,28 @@ def crear_pago(pago: PagoCreate, db: Session = Depends(get_db)):
 
 @router.get("/alumno/{alumno_id}", response_model=List[PagoResponse])
 def listar_pagos_por_alumno(alumno_id: int, db: Session = Depends(get_db)):
-    return pagos_controller.get_pagos_por_alumno(db, alumno_id)
+    pagos = db.query(Pago).filter(Pago.alumno_id == alumno_id).all()
+    return [
+        {
+            "id": pago.id,
+            "alumno_id": pago.alumno_id,
+            "descripcion": pago.descripcion,
+            "comprobante_url": f"archivos/pagos/{os.path.basename(pago.comprobante_url)}",
+            "monto": pago.monto,
+            "fecha_pago": pago.fecha_pago,
+            "estado": pago.estado
+        }
+        for pago in pagos
+    ]
 
+@router.delete("/{pago_id}")
+def eliminar_pago(pago_id: int, db: Session = Depends(get_db)):
+    pago = db.query(Pago).filter(Pago.id == pago_id).first()
+    if not pago:
+        raise HTTPException(status_code=404, detail="Pago no encontrado")
+    db.delete(pago)
+    db.commit()
+    return {"detail": "Pago eliminado correctamente"}
 # =====================
 # CARGA DE COMPROBANTES
 # =====================
@@ -58,7 +79,6 @@ def listar_pagos_por_alumno(alumno_id: int, db: Session = Depends(get_db)):
 @router.post("/upload", response_model=PagoResponse)
 def subir_comprobante(
     alumno_id: int = Form(...),
-    descripcion: str = Form(...),
     archivo: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
@@ -66,35 +86,30 @@ def subir_comprobante(
     if not alumno:
         raise HTTPException(status_code=404, detail="Alumno no encontrado")
 
-    # Validar extensión
     if not archivo.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Solo se permiten archivos PDF")
 
-    # Guardar archivo
     os.makedirs("archivos/pagos", exist_ok=True)
     nombre_archivo = f"{alumno_id}_{archivo.filename}"
     ruta_destino = os.path.join("archivos/pagos", nombre_archivo)
+
     with open(ruta_destino, "wb") as buffer:
         shutil.copyfileobj(archivo.file, buffer)
 
-    # Crear registro
     nuevo_pago = Pago(
-        descripcion=descripcion,
         comprobante_url=ruta_destino,
-        alumno_id=alumno_id
+        alumno_id=alumno_id,
+        descripcion=f"Comprobante de pago {archivo.filename}",  # ✅ agregado
+        estado="pendiente"  # opcional, pero recomendable
     )
     db.add(nuevo_pago)
     db.commit()
     db.refresh(nuevo_pago)
-
     return nuevo_pago
 
 # =====================
 # DESCARGA DE COMPROBANTES
 # =====================
-
-from fastapi.responses import FileResponse
-import os
 
 @router.get("/descargar/{pago_id}")
 def descargar_comprobante(pago_id: int, db: Session = Depends(get_db)):
@@ -108,8 +123,6 @@ def descargar_comprobante(pago_id: int, db: Session = Depends(get_db)):
 
     return FileResponse(path=ruta, filename=os.path.basename(ruta))
 
-
-
 # =====================
 # ENDPOINT PROTEGIDO
 # =====================
@@ -120,4 +133,3 @@ def listar_mis_pagos(current_user: str = Depends(get_current_user), db: Session 
     if not alumno:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return db.query(Pago).filter(Pago.alumno_id == alumno.id).all()
-

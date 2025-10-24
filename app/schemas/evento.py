@@ -8,8 +8,14 @@ class EventoBase(BaseModel):
     fecha: date
     hora: Optional[time] = None
 
-class EventoCreate(EventoBase):
-    alumno_id: Optional[int] = None  # si querés vincularlo a un alumno
+class EventoCreate(BaseModel):
+    titulo: str
+    fecha: date
+    hora: Optional[time] = None
+    descripcion: Optional[str] = None
+    alumno_id: Optional[int] = None
+    usuario_id: int
+
 
 class EventoResponse(EventoBase):
     id: int

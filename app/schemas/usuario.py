@@ -13,3 +13,8 @@ class UsuarioResponse(UsuarioBase):
 
     class Config:
         orm_mode = True
+
+class UsuarioUpdate(BaseModel):
+    nombre: Optional[str] = None
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None

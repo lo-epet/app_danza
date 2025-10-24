@@ -1,92 +1,266 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState, useCallback, useContext } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native'; 
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { Calendar } from 'react-native-calendars';
+import * as SecureStore from 'expo-secure-store';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
+
+// --- Estilos y contexto ---
+import { getGlobalStyles } from '../style/globalStyles';
+import { Tipografia } from '../style/tipografia';
+import { Colors } from '../style/colors';
+import { Espacios } from '../style/espacios';
+import { getCalendarioStyles } from '../style/calendarioScreenStyle';
+import { DarkModeContext } from '../context/DarkModeContext';
 
 export default function CalendarioScreen() {
+  const { modoOscuro } = useContext(DarkModeContext);
+  const GlobalStyles = getGlobalStyles(modoOscuro);
+  const CalendarioStyles = getCalendarioStyles(modoOscuro);
+
+
   const navigation = useNavigation();
-  const [alumnos, setAlumnos] = useState([]);
+  const [eventosMarcados, setEventosMarcados] = useState({});
+  const [todosLosEventos, setTodosLosEventos] = useState([]);
+  const [fechaSeleccionada, setFechaSeleccionada] = useState('');
+  const [eventosDelDia, setEventosDelDia] = useState([]);
 
-  useEffect(() => {
-    fetchAlumnos();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchEventos();
+    }, [])
+  );
 
-  const fetchAlumnos = async () => {
-    try {
-      const token = await SecureStore.getItemAsync('token');
-      const response = await fetch('http://128.3.254.138:8000/alumnos', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      setAlumnos(data);
-    } catch (error) {
-      console.error('Error al cargar alumnos:', error);
+  const fetchEventos = async () => {
+  try {
+    const token = await SecureStore.getItemAsync('token');
+
+    // 🔐 Obtener perfil del usuario actual
+    const perfilRes = await fetch('http://128.3.254.138:8000/auth/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const perfil = await perfilRes.json();
+    const usuarioId = perfil.id;
+
+    // 📅 Obtener todos los eventos
+    const eventosRes = await fetch('http://128.3.254.138:8000/eventos/todos', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const eventos = await eventosRes.json();
+
+    // 🎯 Filtrar solo los eventos del usuario actual
+    const eventosUsuario = eventos.filter(e => e.usuario_id === usuarioId);
+    setTodosLosEventos(eventosUsuario);
+
+    // 📍 Marcar fechas en el calendario
+    const marcados = {};
+    eventosUsuario.forEach((evento) => {
+      const fecha = evento.fecha;
+      marcados[fecha] = {
+        dotColor: Colors.PRIMARY,
+        marked: true
+      };
+    });
+
+    if (fechaSeleccionada) {
+      marcados[fechaSeleccionada] = {
+        ...marcados[fechaSeleccionada],
+        selected: true,
+        selectedColor: Colors.ACCENT,
+      };
     }
+
+    setEventosMarcados(marcados);
+
+    if (fechaSeleccionada) {
+      const filtrados = eventosUsuario.filter(e => e.fecha === fechaSeleccionada);
+      setEventosDelDia(filtrados);
+    }
+  } catch (error) {
+    console.error('❌ Error al cargar eventos:', error);
+  }
+};
+
+
+  const handleDiaSeleccionado = (day) => {
+    const fecha = day.dateString;
+    setFechaSeleccionada(fecha);
+
+    const filtrados = todosLosEventos.filter(e => e.fecha === fecha);
+    setEventosDelDia(filtrados);
+
+    // 🔄 Recalcular todos los marcados desde cero
+    const nuevosMarcados = {};
+    todosLosEventos.forEach((evento) => {
+      const fechaEvento = evento.fecha;
+      nuevosMarcados[fechaEvento] = {
+        dotColor: Colors.PRIMARY,
+        marked: true,
+      };
+    });
+
+    // ✅ Marcar la nueva fecha seleccionada
+    nuevosMarcados[fecha] = {
+      ...nuevosMarcados[fecha],
+      selected: true,
+      selectedColor: Colors.ACCENT,
+    };
+
+    setEventosMarcados(nuevosMarcados);
   };
 
-  const handleAgregarAlumno = () => {
-    navigation.navigate('AgregarAlumno'); // ✅ pantalla para registrar alumno
+  const handleAgregarEvento = () => {
+    navigation.navigate('AgregarEvento', { fecha: fechaSeleccionada });
   };
 
-  const handleBorrarAlumno = async (id) => {
-    try {
-      const token = await SecureStore.getItemAsync('token');
-      await fetch(`http://128.3.254.138:8000/alumnos/${id}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      fetchAlumnos(); // refrescar lista
-    } catch (error) {
-      console.error('Error al borrar alumno:', error);
-    }
+  const handleEliminarEvento = async (id) => {
+    Alert.alert(
+      "Confirmar Eliminación",
+      "¿Estás seguro de que quieres eliminar este evento?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          onPress: async () => {
+            const token = await SecureStore.getItemAsync('token');
+            try {
+              const response = await fetch(`http://128.3.254.138:8000/eventos/eliminar/${id}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              if (response.ok) {
+                Alert.alert('✅ Éxito', 'Evento eliminado correctamente.');
+                fetchEventos();
+              } else {
+                throw new Error("Fallo la eliminación");
+              }
+            } catch (error) {
+              Alert.alert('❌ Error', 'No se pudo eliminar el evento');
+            }
+          },
+          style: "destructive"
+        }
+      ]
+    );
+  };
+
+  const handleVerParticipantes = () => {
+    navigation.navigate('Participantes');
+  };
+
+  const handleVerPerfil = () => {
+    navigation.navigate('Perfil');
+  };
+
+  const cerrarSesion = async () => {
+    Alert.alert(
+      "Cerrar Sesión",
+      "¿Estás seguro de que quieres cerrar tu sesión?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Sí, Cerrar",
+          onPress: async () => {
+            await SecureStore.deleteItemAsync('token');
+            navigation.replace('LoginScreen');
+          },
+          style: "destructive"
+        }
+      ]
+    );
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>📅 Calendario 2025</Text>
-      <Text style={styles.subtitle}>👥 Participantes</Text>
+  <View style={GlobalStyles.screenContainer}>
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={CalendarioStyles.scrollViewContent}
+    >
+      {/* --- HEADER --- */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Espacios.L }}>
+        <Text style={[Tipografia.H1, GlobalStyles.textDefault]}>📅 Calendario</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity style={CalendarioStyles.actionButton} onPress={handleVerPerfil}>
+            <Text style={CalendarioStyles.actionButtonText}>👤 Perfil</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[CalendarioStyles.actionButton, { marginLeft: Espacios.S }]}
+            onPress={handleVerParticipantes}
+          >
+            <Text style={CalendarioStyles.actionButtonText}>👥 Alumnos</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
-      <FlatList
-        data={alumnos}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.alumnoItem}>
-            <Text>{item.nombre}</Text>
-            <TouchableOpacity onPress={() => handleBorrarAlumno(item.id)}>
-              <Text style={styles.borrar}>🗑️</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      />
+      {/* --- CALENDARIO --- */}
+      <View style={[GlobalStyles.card, { padding: Espacios.M }]}>
+        <Calendar
+          markedDates={eventosMarcados}
+          onDayPress={handleDiaSeleccionado}
+          theme={{
+            backgroundColor: Colors.LIGHT,
+            calendarBackground: Colors.LIGHT,
+            textSectionTitleColor: Colors.TEXT_DARK,
+            selectedDayBackgroundColor: Colors.ACCENT,
+            selectedDayTextColor: Colors.WHITE,
+            todayTextColor: Colors.PRIMARY,
+            dotColor: Colors.PRIMARY,
+            selectedDotColor: Colors.WHITE,
+            arrowColor: Colors.ACCENT,
+            textDayFontSize: Tipografia.BODY.fontSize,
+            textMonthFontSize: Tipografia.H2.fontSize,
+            textDayHeaderFontSize: Tipografia.SMALL.fontSize,
+          }}
+        />
+      </View>
 
-      <TouchableOpacity style={styles.agregarButton} onPress={handleAgregarAlumno}>
-        <Text style={styles.agregarText}>➕ Agregar Alumno</Text>
-      </TouchableOpacity>
-    </View>
-  );
+      {/* --- EVENTOS DEL DÍA --- */}
+      {fechaSeleccionada !== '' && (
+        <View style={CalendarioStyles.eventosContainer}>
+          <Text style={[CalendarioStyles.eventosTitle, GlobalStyles.textDefault]}>
+            📌 Eventos del {fechaSeleccionada}
+          </Text>
+          {eventosDelDia.length === 0 ? (
+            <View style={CalendarioStyles.eventoItem}>
+              <Text style={[GlobalStyles.textDefault, { textAlign: 'center' }]}>
+                No hay eventos programados.
+              </Text>
+            </View>
+
+          ) : (
+            eventosDelDia.map((evento) => (
+              <View key={evento.id} style={CalendarioStyles.eventoItem}>
+                <Text style={[CalendarioStyles.eventoTexto, GlobalStyles.textDefault]}>
+                  {evento.titulo} - {evento.hora || 'Sin hora'}
+                </Text>
+                <TouchableOpacity onPress={() => handleEliminarEvento(evento.id)}>
+                  <Text style={CalendarioStyles.eliminar}>
+                    <Icon name="delete" size={14} /> Eliminar
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
+          <TouchableOpacity
+            style={[GlobalStyles.primaryButton, { alignSelf: 'center', width: 'auto', paddingHorizontal: Espacios.L, marginTop: Espacios.M }]}
+            onPress={handleAgregarEvento}
+          >
+            <Text style={GlobalStyles.primaryButtonText}>➕ Agregar evento</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </ScrollView>
+
+    {/* --- FAB --- */}
+    <TouchableOpacity
+      style={GlobalStyles.fab}
+      onPress={handleAgregarEvento}
+      activeOpacity={0.8}
+    >
+      <Icon name="plus" size={30} color={Colors.WHITE} />
+    </TouchableOpacity>
+  </View>
+);
 }
-
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-  subtitle: { fontSize: 18, marginBottom: 10 },
-  alumnoItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderColor: '#ccc',
-  },
-  borrar: { color: 'red', fontSize: 18 },
-  agregarButton: {
-    marginTop: 20,
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
-  },
-  agregarText: { color: '#fff', textAlign: 'center', fontWeight: 'bold' },
-});

@@ -1,107 +1,135 @@
-// frontend/screens/LoginScreen.js
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useContext } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  StyleSheet,
+} from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import { useNavigation } from '@react-navigation/native';
 
+import { getGlobalStyles } from '../style/globalStyles';
+import { Tipografia } from '../style/tipografia';
+import { Espacios } from '../style/espacios';
+import { Colors } from '../style/colors';
+import { DarkModeContext } from '../context/DarkModeContext';
 
-export default function LoginScreen() {
-const [username, setUsername] = useState('');
-const [password, setPassword] = useState('');
-const navigation = useNavigation();
+export default function LoginScreen({ navigation }) {
+  const { modoOscuro } = useContext(DarkModeContext);
+  const GlobalStyles = getGlobalStyles(modoOscuro);
 
-const handleLogin = async () => {
-    
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isEmailFocused, setIsEmailFocused] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('⚠️ Campos requeridos', 'Por favor ingresá tu email y contraseña');
+      return;
+    }
 
     try {
-        
-        const response = await fetch('http://128.3.254.138:8000/auth/login', {
-            
+      const response = await fetch('http://128.3.254.138:8000/auth/login', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
-        });
-        
-        const data = await response.json();
+        body: `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`,
+      });
 
-        if (response.ok) {
-        console.log('Token recibido:', data.access_token);
-        // Guardar token, navegar, etc.
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.error('❌ Error al parsear respuesta:', jsonError);
+        Alert.alert('❌ Error inesperado', 'Respuesta inválida del servidor');
+        return;
+      }
 
-        await SecureStore.setItemAsync('token', data.access_token);
+      if (response.ok && data.access_token) {
+        const token = data.access_token;
+        console.log('✅ Token recibido:', token);
+        await SecureStore.setItemAsync('token', token);
         navigation.replace('Calendario');
-
-        } else {
-        console.error('Error de login:', data.detail);
-        alert('Credenciales inválidas');
-        }
+      } else {
+        console.error('Error de login:', data.detail || data);
+        Alert.alert('❌ Credenciales inválidas', data.detail || 'Revisá tus datos e intentá de nuevo');
+      }
     } catch (error) {
-        console.error('Error de red:', error);
-        alert('No se pudo conectar al servidor');
+      console.error('❌ Error de red:', error);
+      Alert.alert('❌ No se pudo conectar al servidor');
     }
-    };
+  };
 
-    return (
-        <View style={styles.container}>
-        <Text style={styles.title}>Iniciar Sesión</Text>
+  return (
+    <View style={[GlobalStyles.screenContainer, localStyles.centeredContainer]}>
+      <Text style={[Tipografia.H1, GlobalStyles.textDefault, { marginBottom: Espacios.L * 2, textAlign: 'center' }]}>
+        ¡Bienvenido/a!
+      </Text>
 
+      <View style={GlobalStyles.inputContainer}>
+        <Text style={GlobalStyles.inputLabel}>Email</Text>
         <TextInput
-            style={styles.input}
-            placeholder="Usuario o Email"
-            value={username}
-            onChangeText={setUsername}
-            autoCapitalize="none"
+          style={[
+            GlobalStyles.textInput,
+            isEmailFocused && GlobalStyles.inputFocused,
+          ]}
+          onFocus={() => setIsEmailFocused(true)}
+          onBlur={() => setIsEmailFocused(false)}
+          placeholder="email@institucion.com.ar"
+          placeholderTextColor={modoOscuro ? '#aaa' : '#666'}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
         />
+      </View>
 
+      <View style={GlobalStyles.inputContainer}>
+        <Text style={GlobalStyles.inputLabel}>Contraseña</Text>
         <TextInput
-            style={styles.input}
-            placeholder="Contraseña"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
+          style={[
+            GlobalStyles.textInput,
+            isPasswordFocused && GlobalStyles.inputFocused,
+          ]}
+          onFocus={() => setIsPasswordFocused(true)}
+          onBlur={() => setIsPasswordFocused(false)}
+          placeholder="Ingresá tu clave"
+          placeholderTextColor={modoOscuro ? '#aaa' : '#666'}
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
         />
+      </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Ingresar</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={GlobalStyles.primaryButton} onPress={handleLogin}>
+        <Text style={GlobalStyles.primaryButtonText}>Ingresar</Text>
+      </TouchableOpacity>
 
-        </View>
-    );
-    }
+      <TouchableOpacity style={localStyles.linkButton} onPress={() => navigation.navigate('Registro')}>
+        <Text style={[Tipografia.SMALL, GlobalStyles.textDefault, localStyles.linkText]}>
+            ¿No tenés cuenta?{' '}
+            <Text style={[Tipografia.SMALL, { color: Colors.PRIMARY, fontWeight: '600' }]}>
+                Registrate aquí
+            </Text>
+</Text>
 
-        const styles = StyleSheet.create({
-        container: {
-            flex: 1,
-            backgroundColor: '#fff',
-            justifyContent: 'center',
-            paddingHorizontal: 30,
-        },
-        title: {
-            fontSize: 28,
-            marginBottom: 40,
-            textAlign: 'center',
-            fontWeight: 'bold',
-            color: '#333',
-        },
-        input: {
-            height: 50,
-            borderColor: '#ccc',
-            borderWidth: 1,
-            marginBottom: 20,
-            paddingHorizontal: 15,
-            borderRadius: 8,
-        },
-        button: {
-            backgroundColor: '#007AFF',
-            paddingVertical: 15,
-            borderRadius: 8,
-        },
-        buttonText: {
-            color: '#fff',
-            textAlign: 'center',
-            fontSize: 16,
-            fontWeight: 'bold',
-        },
-        });
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const localStyles = StyleSheet.create({
+  centeredContainer: {
+    justifyContent: 'center',
+  },
+  linkButton: {
+    marginTop: Espacios.M,
+    paddingVertical: Espacios.S,
+  },
+  linkText: {
+    textAlign: 'center',
+  },
+});

@@ -15,7 +15,7 @@ class PagoCreate(BaseModel):
 class PagoResponse(BaseModel):
     id: int
     alumno_id: int
-    descripcion: str
+    descripcion:  Optional[str] = None
     comprobante_url: str  # ✅ corregido
     monto: Optional[float] = None
     fecha_pago: Optional[date] = None
