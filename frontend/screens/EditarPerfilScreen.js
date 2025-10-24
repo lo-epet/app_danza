@@ -16,7 +16,7 @@ export default function EditarPerfilScreen({ navigation }) {
   useEffect(() => {
     const cargarDatos = async () => {
       const token = await SecureStore.getItemAsync('token');
-      const response = await fetch('http://128.3.254.138:8000/usuarios/me', {
+      const response = await fetch('https://app-danza-sv9i.onrender.com/usuarios/me', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -55,7 +55,7 @@ export default function EditarPerfilScreen({ navigation }) {
     }
 
     try {
-      const response = await fetch('http://128.3.254.138:8000/usuarios/actualizar', {
+      const response = await fetch('https://app-danza-sv9i.onrender.com/usuarios/actualizar', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

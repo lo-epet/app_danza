@@ -32,7 +32,7 @@ export default function PerfilScreen({ navigation }) {
           return;
         }
 
-        const response = await fetch('http://128.3.254.138:8000/usuarios/me', {
+        const response = await fetch('https://app-danza-sv9i.onrender.com/usuarios/me', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -81,7 +81,7 @@ export default function PerfilScreen({ navigation }) {
     };
 
     try {
-      const response = await fetch('http://128.3.254.138:8000/usuarios/actualizar', {
+      const response = await fetch('https://app-danza-sv9i.onrender.com/usuarios/actualizar', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

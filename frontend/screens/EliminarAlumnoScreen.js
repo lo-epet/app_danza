@@ -18,7 +18,7 @@ export default function EliminarAlumnoScreen() {
     try {
       const token = await SecureStore.getItemAsync('token'); // 🔐 recuperar token
 
-      const response = await fetch('http://128.3.254.138:8000/alumnos/', {
+      const response = await fetch('https://app-danza-sv9i.onrender.com/alumnos/', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`, // ✅ enviar token
@@ -48,7 +48,7 @@ export default function EliminarAlumnoScreen() {
     try {
       const token = await SecureStore.getItemAsync('token');
 
-      const response = await fetch(`http://128.3.254.138:8000/alumnos/${id}`, {
+      const response = await fetch(`https://app-danza-sv9i.onrender.com/alumnos/${id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`, // ✅ enviar token

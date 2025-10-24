@@ -19,7 +19,7 @@ export default function RegistroScreen() {
 
   const registrar = async () => {
     try {
-      const response = await fetch('http://128.3.254.138:8000/usuarios/crear', {
+      const response = await fetch('https://app-danza-sv9i.onrender.com/usuarios/crear', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre, email, password }),

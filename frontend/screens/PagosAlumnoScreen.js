@@ -23,7 +23,7 @@ export default function PagosAlumnoScreen({ route }) {
 
   const fetchPagos = async () => {
     try {
-      const response = await fetch(`http://128.3.254.138:8000/pagos/alumno/${alumnoId}`);
+      const response = await fetch(`https://app-danza-sv9i.onrender.com/pagos/alumno/${alumnoId}`);
       const data = await response.json();
       setPagos(data);
     } catch (error) {
@@ -56,7 +56,7 @@ export default function PagosAlumnoScreen({ route }) {
     formData.append('alumno_id', alumnoId.toString());
 
     try {
-      const response = await fetch(`http://128.3.254.138:8000/pagos/upload`, {
+      const response = await fetch(`https://app-danza-sv9i.onrender.com/pagos/upload`, {
         method: 'POST',
         headers: { 'Content-Type': 'multipart/form-data' },
         body: formData,
@@ -80,7 +80,7 @@ export default function PagosAlumnoScreen({ route }) {
 
   const eliminarPago = async (id) => {
     try {
-      await fetch(`http://128.3.254.138:8000/pagos/${id}`, { method: 'DELETE' });
+      await fetch(`https://app-danza-sv9i.onrender.com/pagos/${id}`, { method: 'DELETE' });
       fetchPagos();
     } catch (error) {
       console.error('Error al eliminar pago:', error);
@@ -117,7 +117,7 @@ export default function PagosAlumnoScreen({ route }) {
             {new Date(item.fecha).toLocaleDateString()}
           </Text>
           {item.comprobante_url && (
-            <TouchableOpacity onPress={() => Linking.openURL(`http://128.3.254.138:8000/${item.comprobante_url}`)}>
+            <TouchableOpacity onPress={() => Linking.openURL(`https://app-danza-sv9i.onrender.com/${item.comprobante_url}`)}>
               <Text style={{ color: Colors.PRIMARY, textDecorationLine: 'underline', fontWeight: '600' }}>
                 {item.comprobante_url.split('/').pop()}
               </Text>

@@ -36,14 +36,14 @@ export default function CalendarioScreen() {
     const token = await SecureStore.getItemAsync('token');
 
     // 🔐 Obtener perfil del usuario actual
-    const perfilRes = await fetch('http://128.3.254.138:8000/auth/me', {
+    const perfilRes = await fetch('https://app-danza-sv9i.onrender.com/auth/me', {
       headers: { Authorization: `Bearer ${token}` }
     });
     const perfil = await perfilRes.json();
     const usuarioId = perfil.id;
 
     // 📅 Obtener todos los eventos
-    const eventosRes = await fetch('http://128.3.254.138:8000/eventos/todos', {
+    const eventosRes = await fetch('https://app-danza-sv9i.onrender.com/eventos/todos', {
       headers: { Authorization: `Bearer ${token}` }
     });
     const eventos = await eventosRes.json();
@@ -124,7 +124,7 @@ export default function CalendarioScreen() {
           onPress: async () => {
             const token = await SecureStore.getItemAsync('token');
             try {
-              const response = await fetch(`http://128.3.254.138:8000/eventos/eliminar/${id}`, {
+              const response = await fetch(`https://app-danza-sv9i.onrender.com/eventos/eliminar/${id}`, {
                 method: 'DELETE',
                 headers: {
                   'Authorization': `Bearer ${token}`

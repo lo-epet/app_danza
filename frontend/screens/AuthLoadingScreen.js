@@ -14,7 +14,7 @@ export default function AuthLoadingScreen({ navigation }) {
       }
 
       try {
-        const res = await fetch('http://128.3.254.138:8000/auth/me', {
+        const res = await fetch('https://app-danza-sv9i.onrender.com/auth/me', {
           headers: { Authorization: `Bearer ${token}` },
         });
 

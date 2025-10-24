@@ -34,13 +34,13 @@ export default function AgregarEventoScreen({ route }) {
     try {
       const token = await SecureStore.getItemAsync('token');
 
-      const perfilRes = await fetch('http://128.3.254.138:8000/auth/me', {
+      const perfilRes = await fetch('https://app-danza-sv9i.onrender.com/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const perfil = await perfilRes.json();
       const usuarioId = perfil.id;
 
-      const response = await fetch('http://128.3.254.138:8000/eventos/crear', {
+      const response = await fetch('https://app-danza-sv9i.onrender.com/eventos/crear', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

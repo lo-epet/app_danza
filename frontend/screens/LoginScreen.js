@@ -31,7 +31,7 @@ export default function LoginScreen({ navigation }) {
     }
 
     try {
-      const response = await fetch('http://128.3.254.138:8000/auth/login', {
+      const response = await fetch('https://app-danza-sv9i.onrender.com/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
