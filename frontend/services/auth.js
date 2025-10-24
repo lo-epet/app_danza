@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://192.168.1.125:8000'; // Cambiá esto si tu IP cambia
+const API_URL = 'https://app-danza-sv9i.onrender.com'; // Cambiá esto si tu IP cambia
 
 export const login = async (email, password) => {
   const formData = new FormData();
