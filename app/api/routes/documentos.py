@@ -61,7 +61,7 @@ def listar_documentos_por_alumno(alumno_id: int, db: Session = Depends(get_db)):
             "id": doc.id,
             "nombre": os.path.basename(doc.url_archivo),
             "tipo": doc.tipo,
-            "url": f"http://128.3.254.138:8000/{doc.url_archivo}"
+            "url": f"https://app-danza-sv9i.onrender.com/{doc.url_archivo}"
         }
         for doc in documentos
     ]

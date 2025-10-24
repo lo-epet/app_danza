@@ -23,7 +23,7 @@ export default function DocumentosAlumnoScreen({ route }) {
 
   const fetchDocumentos = async () => {
     try {
-      const response = await fetch(`http://128.3.254.138:8000/documentos/alumno/${alumnoId}`);
+      const response = await fetch(`hhttps://app-danza-sv9i.onrender.com/documentos/alumno/${alumnoId}`);
       const data = await response.json();
       setDocumentos(data);
     } catch (error) {
@@ -68,7 +68,7 @@ export default function DocumentosAlumnoScreen({ route }) {
     });
 
     try {
-      const response = await fetch('http://128.3.254.138:8000/documentos/upload', {
+      const response = await fetch('https://app-danza-sv9i.onrender.com/documentos/upload', {
         method: 'POST',
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -97,7 +97,7 @@ export default function DocumentosAlumnoScreen({ route }) {
     try {
       const token = await SecureStore.getItemAsync('token'); // ✅ recuperar token
 
-      const response = await fetch(`http://128.3.254.138:8000/documentos/${id}`, {
+      const response = await fetch(`https://app-danza-sv9i.onrender.com/documentos/${id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`, // ✅ enviar token en el header
