@@ -23,7 +23,7 @@ export default function DocumentosAlumnoScreen({ route }) {
 
   const fetchDocumentos = async () => {
     try {
-      const response = await fetch(`hhttps://app-danza-sv9i.onrender.com/documentos/alumno/${alumnoId}`);
+      const response = await fetch(`https://app-danza-sv9i.onrender.com/documentos/alumno/${alumnoId}`);
       const data = await response.json();
       setDocumentos(data);
     } catch (error) {

@@ -1,6 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
+from fastapi.responses import FileResponse
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+import os
+
 from app.database.database import SessionLocal
 from app.models.alumno import Alumno
 from app.schemas.alumno import AlumnoCreate, AlumnoResponse
@@ -55,3 +60,32 @@ def delete_alumno(
     db.delete(alumno)
     db.commit()
     return {"detail": f"Alumno con ID {alumno_id} eliminado correctamente"}
+
+# 📄 Generar PDF con los alumnos del usuario autenticado
+@router.get("/pdf")
+def generar_pdf_alumnos(
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user)
+):
+    alumnos = db.query(Alumno).filter(Alumno.usuario_id == usuario.id).all()
+
+    os.makedirs("archivos/pdf", exist_ok=True)
+    ruta_pdf = f"archivos/pdf/listado_alumnos_{usuario.id}.pdf"
+    c = canvas.Canvas(ruta_pdf, pagesize=A4)
+    width, height = A4
+
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(50, height - 50, f"Listado de Alumnos - {usuario.nombre}")
+
+    c.setFont("Helvetica", 12)
+    y = height - 80
+    for alumno in alumnos:
+        linea = f"{alumno.nombre} - {alumno.email} - DNI: {alumno.dni}"
+        c.drawString(50, y, linea)
+        y -= 20
+        if y < 50:
+            c.showPage()
+            y = height - 50
+
+    c.save()
+    return FileResponse(ruta_pdf, media_type="application/pdf", filename="listado_alumnos.pdf")
