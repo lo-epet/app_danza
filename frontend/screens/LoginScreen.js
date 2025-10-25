@@ -39,14 +39,16 @@ export default function LoginScreen({ navigation }) {
         body: `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`,
       });
 
+      let text = await response.text();
       let data;
       try {
-        data = await response.json();
+        data = JSON.parse(text);
       } catch (jsonError) {
-        console.error('❌ Error al parsear respuesta:', jsonError);
-        Alert.alert('❌ Error inesperado', 'Respuesta inválida del servidor');
+        console.error('❌ Respuesta no es JSON:', text);
+        Alert.alert('❌ Error inesperado', text);
         return;
       }
+
 
       if (response.ok && data.access_token) {
         const token = data.access_token;

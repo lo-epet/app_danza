@@ -119,4 +119,3 @@ def login(email: str = Form(...), password: str = Form(...), db: Session = Depen
 @router.get("/me", response_model=UsuarioResponse)
 def get_profile(usuario: Usuario = Depends(get_current_user)):
     return usuario
-    
