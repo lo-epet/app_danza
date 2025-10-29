@@ -29,6 +29,8 @@ export default function LoginScreen({ navigation }) {
       Alert.alert('⚠️ Campos requeridos', 'Por favor ingresá tu email y contraseña');
       return;
     }
+    
+
 
     try {
       const response = await fetch('https://app-danza-sv9i.onrender.com/auth/login', {

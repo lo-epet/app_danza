@@ -8,7 +8,7 @@ import { Tipografia } from '../style/tipografia';
 import { Colors } from '../style/colors';
 import { Espacios } from '../style/espacios';
 import { CalendarioStyles } from '../style/calendarioScreenStyle';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 
 
@@ -58,21 +58,16 @@ const descargarPDF = async () => {
     const url = 'https://app-danza-sv9i.onrender.com/alumnos/pdf';
     const fileUri = FileSystem.documentDirectory + 'listado_alumnos.pdf';
 
-    const downloadResumable = FileSystem.createDownloadResumable(
-      url,
-      fileUri,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const response = await FileSystem.downloadAsync(url, fileUri, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-    const { uri } = await downloadResumable.downloadAsync();
-    console.log('✅ PDF descargado en:', uri);
+    console.log('✅ PDF descargado en:', response.uri);
 
     if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(uri);
+      await Sharing.shareAsync(response.uri);
     } else {
       setMensaje('✅ PDF descargado, pero no se puede compartir en este dispositivo');
     }
@@ -81,6 +76,7 @@ const descargarPDF = async () => {
     setMensaje('❌ No se pudo descargar el PDF');
   }
 };
+
 
 
   return (
